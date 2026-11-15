@@ -96,6 +96,73 @@ function SectiuneVersiune({ versiune, randuri }: { versiune: string; randuri: Ra
   );
 }
 
+interface RandEvaluareFotbal {
+  id: number;
+  eveniment_id: string;
+  model: string;
+  versiune_model: string;
+  piata: string;
+  selectie: string;
+  probabilitate: number;
+  start_utc: string;
+  competitie: string;
+  participant_1: string;
+  participant_2: string;
+  rezultat: string;
+  corect: boolean;
+  brier: number;
+  log_loss: number;
+}
+
+async function fetchToateEvaluarileFotbal(db: ReturnType<typeof supabasePublic>): Promise<RandEvaluareFotbal[]> {
+  const toate: RandEvaluareFotbal[] = [];
+  let start = 0;
+  while (true) {
+    const { data, error } = await db
+      .from("evaluare_predictii_fotbal")
+      .select("*")
+      .order("start_utc", { ascending: false })
+      .range(start, start + MARIME_PAGINA - 1);
+    if (error || !data) break;
+    toate.push(...(data as RandEvaluareFotbal[]));
+    if (data.length < MARIME_PAGINA) break;
+    start += MARIME_PAGINA;
+  }
+  return toate;
+}
+
+/** pentru piețe cu mai mult de 2 selecții (1x2_fotbal), "favoritul" e selecția cu probabilitatea maximă din grup */
+function celMaiProbabilPerMeci(randuri: RandEvaluareFotbal[]): RandEvaluareFotbal[] {
+  const grupuri = new Map<string, RandEvaluareFotbal>();
+  for (const r of randuri) {
+    const cheie = `${r.eveniment_id}|${r.piata}`;
+    const curent = grupuri.get(cheie);
+    if (!curent || r.probabilitate > curent.probabilitate) grupuri.set(cheie, r);
+  }
+  return Array.from(grupuri.values());
+}
+
+function SectiuneVersiunePiataFotbal({ versiune, piata, randuri }: { versiune: string; piata: string; randuri: RandEvaluareFotbal[] }) {
+  const favorite = celMaiProbabilPerMeci(randuri);
+  const acuratete = favorite.length > 0 ? favorite.filter((r) => r.corect).length / favorite.length : null;
+  const brierMediu = randuri.length > 0 ? randuri.reduce((s, r) => s + r.brier, 0) / randuri.length : null;
+  const logLossMediu = favorite.length > 0 ? favorite.reduce((s, r) => s + r.log_loss, 0) / favorite.length : null;
+
+  return (
+    <section>
+      <h2>
+        poisson-fotbal · versiune {versiune} · {piata}
+      </h2>
+      <ul className="lista-surse">
+        <li>Meciuri evaluate: {favorite.length}</li>
+        <li>Acuratețe (câștigă favoritul): {acuratete !== null ? `${(acuratete * 100).toFixed(1)}%` : "-"}</li>
+        <li>Brier mediu: {brierMediu !== null ? brierMediu.toFixed(4) : "-"}</li>
+        <li>Log-loss mediu: {logLossMediu !== null ? logLossMediu.toFixed(4) : "-"}</li>
+      </ul>
+    </section>
+  );
+}
+
 export default async function Predictii() {
   const db = supabasePublic();
   const toate = await fetchToateEvaluarile(db);
@@ -106,6 +173,15 @@ export default async function Predictii() {
     peVersiune.get(r.versiune_model)!.push(r);
   }
   const versiuni = Array.from(peVersiune.keys()).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+
+  const toateFotbal = await fetchToateEvaluarileFotbal(db);
+  const peVersiunePiataFotbal = new Map<string, RandEvaluareFotbal[]>();
+  for (const r of toateFotbal) {
+    const cheie = `${r.versiune_model}|${r.piata}`;
+    if (!peVersiunePiataFotbal.has(cheie)) peVersiunePiataFotbal.set(cheie, []);
+    peVersiunePiataFotbal.get(cheie)!.push(r);
+  }
+  const grupuriFotbal = Array.from(peVersiunePiataFotbal.keys()).sort();
 
   const istoric = toate.filter((r) => r.probabilitate >= 0.5).slice(0, 30);
 
@@ -122,6 +198,13 @@ export default async function Predictii() {
       ) : (
         versiuni.map((v) => <SectiuneVersiune key={v} versiune={v} randuri={peVersiune.get(v)!} />)
       )}
+
+      {grupuriFotbal.map((cheie) => {
+        const [versiune, piata] = cheie.split("|");
+        return (
+          <SectiuneVersiunePiataFotbal key={cheie} versiune={versiune} piata={piata} randuri={peVersiunePiataFotbal.get(cheie)!} />
+        );
+      })}
 
       {istoric.length > 0 && (
         <section>
