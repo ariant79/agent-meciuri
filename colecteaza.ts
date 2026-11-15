@@ -5,6 +5,7 @@ import { colecteazaTenisEspn } from "@/colectoare/espn-tenis";
 import { colecteazaAlteleEspn } from "@/colectoare/espn-altele";
 import { clasifica } from "@/clasificator";
 import { actualizeazaPredictiiTenis } from "@/lib/predictii/actualizare-zilnica";
+import { actualizeazaPredictiiFotbal } from "@/lib/predictii/actualizare-zilnica-fotbal";
 import type { StareSursa } from "@/lib/types";
 
 export async function executaColectare(dataRo: string) {
@@ -44,13 +45,20 @@ export async function executaColectare(dataRo: string) {
     if (error) eroareSalvare = error.message;
   }
 
-  let predictii: { actualizariElo: number; predictiiNoi: number; jucatoriNepotriviti: string[] } | undefined;
+  let predictiiTenis: Awaited<ReturnType<typeof actualizeazaPredictiiTenis>> | undefined;
+  let predictiiFotbal: Awaited<ReturnType<typeof actualizeazaPredictiiFotbal>> | undefined;
   if (!eroareSalvare) {
     const tenisScorat = scorate.filter((e) => e.sport === "tenis");
+    const fotbalScorat = scorate.filter((e) => e.sport === "fotbal");
     try {
-      predictii = await actualizeazaPredictiiTenis(db, tenisScorat);
+      predictiiTenis = await actualizeazaPredictiiTenis(db, tenisScorat);
     } catch (err) {
-      console.error("[predictii] eroare neprevăzută:", err);
+      console.error("[predictii] eroare neprevăzută (tenis):", err);
+    }
+    try {
+      predictiiFotbal = await actualizeazaPredictiiFotbal(db, fotbalScorat);
+    } catch (err) {
+      console.error("[predictii] eroare neprevăzută (fotbal):", err);
     }
   }
 
@@ -61,5 +69,5 @@ export async function executaColectare(dataRo: string) {
     eroare: eroareSalvare ?? null,
   });
 
-  return { dataRo, evenimente: scorate.length, stareSurse, eroareSalvare, predictii };
+  return { dataRo, evenimente: scorate.length, stareSurse, eroareSalvare, predictiiTenis, predictiiFotbal };
 }
