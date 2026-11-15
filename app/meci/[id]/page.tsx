@@ -1,0 +1,212 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { supabasePublic } from "@/lib/supabase";
+import { oraRoFromUtc } from "@/lib/date";
+import { numeSport, afiseazaFaza, afiseazaParticipant, rezultatText, type RandEvenimentDeBaza } from "@/lib/afisare-eveniment";
+import { determinaSuprafata } from "@/lib/predictii/actualizare-zilnica";
+import { gasesteJucatorId, normalizeazaNumeJucator } from "@/lib/predictii/potrivire-nume";
+import { ordineCanonica, orienteazaH2h, type RandH2hDb } from "@/lib/predictii/h2h";
+import { fetchToateRanduri } from "@/lib/supabase-paginat";
+import type { DimensiuneRating } from "@/lib/predictii/tipuri";
+
+export const dynamic = "force-dynamic";
+
+interface RandEveniment extends RandEvenimentDeBaza {
+  id: string;
+  start_utc: string;
+  scor: number | null;
+  scor_detalii: { valoare: number; rivalitate: number; traditie: number } | null;
+  etichete: string[] | null;
+  data_ro: string;
+}
+
+type RandRatingGeneral = { jucator_id: string; nume: string };
+type RandRatingComplet = { jucator_id: string; suprafata: DimensiuneRating; rating: number; nr_meciuri: number };
+
+async function obtineStatisticiTenis(db: ReturnType<typeof supabasePublic>, ev: RandEveniment) {
+  const [randuriAlias, randuriGeneral] = await Promise.all([
+    fetchToateRanduri<{ nume_sursa: string; jucator_id: string }>((start, end) =>
+      db.from("jucatori_alias").select("nume_sursa,jucator_id").eq("sursa", "espn").range(start, end)
+    ),
+    fetchToateRanduri<RandRatingGeneral>((start, end) =>
+      db.from("ratinguri").select("jucator_id,nume").eq("sport", "tenis").eq("suprafata", "general").range(start, end)
+    ),
+  ]);
+
+  const aliasuri = new Map(randuriAlias.map((r) => [r.nume_sursa, r.jucator_id]));
+  const jucatoriCunoscuti = new Map(randuriGeneral.map((r) => [normalizeazaNumeJucator(r.nume), r.jucator_id]));
+
+  const r1 = gasesteJucatorId(ev.participant_1, aliasuri, jucatoriCunoscuti);
+  const r2 = gasesteJucatorId(ev.participant_2, aliasuri, jucatoriCunoscuti);
+  if (!r1.jucatorId || !r2.jucatorId) return null;
+
+  const suprafata = determinaSuprafata(ev.competitie);
+
+  const [{ data: randuriRating }, { data: randH2hBrut }, { data: randuriPredictie }] = await Promise.all([
+    db
+      .from("ratinguri")
+      .select("jucator_id,suprafata,rating,nr_meciuri")
+      .eq("sport", "tenis")
+      .in("jucator_id", [r1.jucatorId, r2.jucatorId]),
+    (() => {
+      const [id1, id2] = ordineCanonica(r1.jucatorId!, r2.jucatorId!);
+      return db
+        .from("h2h_tenis")
+        .select("jucator_id_1,jucator_id_2,victorii_1,victorii_2,ultimul_meci")
+        .eq("jucator_id_1", id1)
+        .eq("jucator_id_2", id2)
+        .maybeSingle();
+    })(),
+    db.from("predictii").select("selectie,probabilitate").eq("eveniment_id", ev.id).eq("piata", "castigator"),
+  ]);
+
+  const ratinguriPerJucator = (ratinguri: RandRatingComplet[], jucatorId: string): Record<string, RandRatingComplet> =>
+    Object.fromEntries(
+      ratinguri.filter((r) => r.jucator_id === jucatorId).map((r): [string, RandRatingComplet] => [r.suprafata, r])
+    );
+
+  const h2h = orienteazaH2h((randH2hBrut as RandH2hDb | null) ?? null, r1.jucatorId, r2.jucatorId);
+
+  let predictie: { p1: number; p2: number } | null = null;
+  for (const r of randuriPredictie ?? []) {
+    predictie = predictie ?? { p1: 0, p2: 0 };
+    predictie[r.selectie as "p1" | "p2"] = r.probabilitate;
+  }
+
+  return {
+    suprafata,
+    h2h,
+    predictie,
+    ratinguri1: ratinguriPerJucator((randuriRating ?? []) as RandRatingComplet[], r1.jucatorId),
+    ratinguri2: ratinguriPerJucator((randuriRating ?? []) as RandRatingComplet[], r2.jucatorId),
+  };
+}
+
+export default async function PaginaMeci({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const db = supabasePublic();
+
+  const { data: ev } = await db
+    .from("evenimente")
+    .select(
+      "id,sport,competitie,cod_competitie,faza,participant_1,participant_2,start_utc,status,scor,scor_detalii,etichete,extra,data_ro"
+    )
+    .eq("id", decodeURIComponent(id))
+    .maybeSingle();
+
+  if (!ev) notFound();
+  const eveniment = ev as RandEveniment;
+
+  const statisticiTenis = eveniment.sport === "tenis" ? await obtineStatisticiTenis(db, eveniment) : null;
+  const terminat = eveniment.status === "terminat";
+  const rezultat = terminat ? rezultatText(eveniment) : null;
+  const faza = afiseazaFaza(eveniment);
+  const clasament = eveniment.extra?.clasament as { acasa: number | null; oaspete: number | null } | undefined;
+
+  return (
+    <main className="pagina">
+      <header className="antet">
+        <h1>
+          {afiseazaParticipant(eveniment, eveniment.participant_1)} – {afiseazaParticipant(eveniment, eveniment.participant_2)}
+        </h1>
+        <Link href={`/?data=${eveniment.data_ro}`}>← Înapoi</Link>
+      </header>
+
+      <section>
+        <p className="card-detalii">
+          {eveniment.competitie}
+          {faza ? ` · ${faza}` : ""} · {oraRoFromUtc(eveniment.start_utc)}
+          {rezultat ? ` · ${rezultat}` : ""}
+        </p>
+        {eveniment.etichete && eveniment.etichete.length > 0 && (
+          <div className="card-etichete">
+            {eveniment.etichete.map((et) => (
+              <span key={et} className="eticheta">
+                {et}
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {eveniment.scor_detalii && (
+        <section>
+          <h2>Scor</h2>
+          <ul className="lista-surse">
+            <li>Valoare: {eveniment.scor_detalii.valoare}</li>
+            <li>Rivalitate: {eveniment.scor_detalii.rivalitate}</li>
+            <li>Tradiție: {eveniment.scor_detalii.traditie}</li>
+          </ul>
+        </section>
+      )}
+
+      {eveniment.sport === "tenis" ? (
+        <section>
+          <h2>Statistici tenis</h2>
+          {statisticiTenis ? (
+            <>
+              {statisticiTenis.predictie && (
+                <p>
+                  Predicție: {afiseazaParticipant(eveniment, eveniment.participant_1)}{" "}
+                  {Math.round(statisticiTenis.predictie.p1 * 100)}% · {afiseazaParticipant(eveniment, eveniment.participant_2)}{" "}
+                  {Math.round(statisticiTenis.predictie.p2 * 100)}%
+                </p>
+              )}
+              <div className="rating-grid">
+                {(
+                  [
+                    { nume: eveniment.participant_1, ratinguri: statisticiTenis.ratinguri1 },
+                    { nume: eveniment.participant_2, ratinguri: statisticiTenis.ratinguri2 },
+                  ] as Array<{ nume: string; ratinguri: Record<string, RandRatingComplet> }>
+                ).map(({ nume, ratinguri }) => (
+                  <div key={nume} className="rating-jucator">
+                    <h3>{afiseazaParticipant(eveniment, nume)}</h3>
+                    {ratinguri.general && (
+                      <div className="rating-linie">
+                        <span>Elo general</span>
+                        <span>
+                          {Math.round(ratinguri.general.rating)} ({ratinguri.general.nr_meciuri} meciuri)
+                        </span>
+                      </div>
+                    )}
+                    {ratinguri[statisticiTenis.suprafata] && (
+                      <div className="rating-linie">
+                        <span>Elo {statisticiTenis.suprafata}</span>
+                        <span>
+                          {Math.round(ratinguri[statisticiTenis.suprafata].rating)} ({ratinguri[statisticiTenis.suprafata].nr_meciuri}{" "}
+                          meciuri)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="h2h">
+                {statisticiTenis.h2h.victoriiA === 0 && statisticiTenis.h2h.victoriiB === 0
+                  ? "Prima întâlnire între cei doi jucători."
+                  : `Head-to-head: ${afiseazaParticipant(eveniment, eveniment.participant_1)} ${statisticiTenis.h2h.victoriiA} - ${statisticiTenis.h2h.victoriiB} ${afiseazaParticipant(eveniment, eveniment.participant_2)}`}
+              </p>
+            </>
+          ) : (
+            <p className="gol">Cel puțin unul dintre jucători nu e potrivit cu baza de date Sackmann — fără statistici.</p>
+          )}
+        </section>
+      ) : (
+        <section>
+          <h2>Statistici</h2>
+          {clasament && (
+            <p>
+              Clasament: {afiseazaParticipant(eveniment, eveniment.participant_1)} #{clasament.acasa ?? "?"} ·{" "}
+              {afiseazaParticipant(eveniment, eveniment.participant_2)} #{clasament.oaspete ?? "?"}
+            </p>
+          )}
+          <p className="gol">Predicții încă indisponibile pentru acest sport.</p>
+        </section>
+      )}
+
+      <footer className="subsol">
+        {eveniment.sport === "tenis" && <p>Date istorice tenis: Jeff Sackmann / Tennis Abstract, CC BY-NC-SA 4.0.</p>}
+      </footer>
+    </main>
+  );
+}

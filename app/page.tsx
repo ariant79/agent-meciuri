@@ -56,29 +56,31 @@ function CardEveniment({ ev, predictie }: { ev: RandEveniment; predictie?: Predi
   const faza = afiseazaFaza(ev);
 
   return (
-    <li className={terminat ? "card card-terminat" : "card"}>
-      <div className="card-randul1">
-        <span className="card-ora">{oraRoFromUtc(ev.start_utc)}</span>
-        <IndicatorImportanta scor={ev.scor} />
-      </div>
-      <div className="card-meci">
-        {afiseazaParticipant(ev, ev.participant_1)} – {afiseazaParticipant(ev, ev.participant_2)}
-      </div>
-      <div className="card-detalii">
-        {ev.competitie}
-        {faza ? ` · ${faza}` : ""}
-        {rezultat ? ` · ${rezultat}` : ""}
-      </div>
-      {predictie && <PredictieTenis ev={ev} predictie={predictie} />}
-      {ev.etichete && ev.etichete.length > 0 && (
-        <div className="card-etichete">
-          {ev.etichete.map((et) => (
-            <span key={et} className="eticheta">
-              {et}
-            </span>
-          ))}
+    <li>
+      <Link href={`/meci/${encodeURIComponent(ev.id)}`} className={terminat ? "card card-terminat" : "card"}>
+        <div className="card-randul1">
+          <span className="card-ora">{oraRoFromUtc(ev.start_utc)}</span>
+          <IndicatorImportanta scor={ev.scor} />
         </div>
-      )}
+        <div className="card-meci">
+          {afiseazaParticipant(ev, ev.participant_1)} – {afiseazaParticipant(ev, ev.participant_2)}
+        </div>
+        <div className="card-detalii">
+          {ev.competitie}
+          {faza ? ` · ${faza}` : ""}
+          {rezultat ? ` · ${rezultat}` : ""}
+        </div>
+        {predictie && <PredictieTenis ev={ev} predictie={predictie} />}
+        {ev.etichete && ev.etichete.length > 0 && (
+          <div className="card-etichete">
+            {ev.etichete.map((et) => (
+              <span key={et} className="eticheta">
+                {et}
+              </span>
+            ))}
+          </div>
+        )}
+      </Link>
     </li>
   );
 }

@@ -81,6 +81,9 @@ section h2 {
   border: 1px solid #262b35;
   border-radius: 8px;
   padding: 0.7rem 0.9rem;
+  display: block;
+  text-decoration: none;
+  color: inherit;
 }
 
 .card-terminat {
@@ -226,4 +229,30 @@ details[open] summary {
 .tabel-calibrare th {
   color: #9aa3b2;
   font-weight: 500;
+}
+
+.rating-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.rating-jucator h3 {
+  font-size: 0.95rem;
+  margin: 0 0 0.4rem;
+}
+
+.rating-linie {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.15rem 0;
+  color: #9aa3b2;
+  font-size: 0.85rem;
+}
+
+.h2h {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
 }
