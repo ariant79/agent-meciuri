@@ -10,6 +10,7 @@ import { readFileSync, existsSync } from "fs";
 import { createClient } from "@supabase/supabase-js";
 import { incarcaIstoricSackmann } from "@/lib/predictii/sackmann";
 import { creeazaStare, actualizeazaMeci, ratinguriJucator, DIMENSIUNI_RATING } from "@/lib/predictii/modele/elo-tenis";
+import { creeazaStareH2h, actualizeazaH2hBulk, randuriH2h } from "@/lib/predictii/h2h";
 
 /** încarcă .env.local manual, fără dependență nouă (nu rulează prin Next.js, care face asta automat) */
 function incarcaEnvLocal(): void {
@@ -44,6 +45,7 @@ async function main() {
   console.log(`Total meciuri de procesat: ${meciuri.length}`);
 
   const stare = creeazaStare();
+  const stareH2h = creeazaStareH2h();
   const infoJucatori = new Map<string, InfoJucator>();
   let ignorateWalkover = 0;
 
@@ -67,6 +69,7 @@ async function main() {
     noteazaInfo(meci.castigatorId, meci.castigatorNume, meci.tur, meci.dataISO, meci.suprafata);
     noteazaInfo(meci.invinsId, meci.invinsNume, meci.tur, meci.dataISO, meci.suprafata);
     actualizeazaMeci(stare, meci.castigatorId, meci.invinsId, meci.suprafata);
+    actualizeazaH2hBulk(stareH2h, meci.castigatorId, meci.invinsId, meci.dataISO);
   }
 
   console.log(`Walkover/retragere-înainte-de-start ignorate: ${ignorateWalkover}`);
@@ -112,6 +115,19 @@ async function main() {
       process.exit(1);
     }
     console.log(`  scris ${Math.min(i + MARIME_LOT, randuri.length)}/${randuri.length}`);
+  }
+
+  const randuriH2hDeScris = randuriH2h(stareH2h);
+  console.log(`Rânduri de scris în h2h_tenis: ${randuriH2hDeScris.length}`);
+
+  for (let i = 0; i < randuriH2hDeScris.length; i += MARIME_LOT) {
+    const lot = randuriH2hDeScris.slice(i, i + MARIME_LOT);
+    const { error } = await db.from("h2h_tenis").upsert(lot, { onConflict: "jucator_id_1,jucator_id_2" });
+    if (error) {
+      console.error(`Eroare la lotul h2h ${i}-${i + lot.length}:`, error.message);
+      process.exit(1);
+    }
+    console.log(`  scris h2h ${Math.min(i + MARIME_LOT, randuriH2hDeScris.length)}/${randuriH2hDeScris.length}`);
   }
 
   console.log("Backfill terminat.");
