@@ -148,6 +148,14 @@ function SectiuneVersiunePiataFotbal({ versiune, piata, randuri }: { versiune: s
   const brierMediu = randuri.length > 0 ? randuri.reduce((s, r) => s + r.brier, 0) / randuri.length : null;
   const logLossMediu = favorite.length > 0 ? favorite.reduce((s, r) => s + r.log_loss, 0) / favorite.length : null;
 
+  const galeti = Array.from({ length: 10 }, () => ({ n: 0, sumaP: 0, sumaCorect: 0 }));
+  for (const r of favorite) {
+    const idx = Math.min(9, Math.floor(r.probabilitate * 10));
+    galeti[idx].n++;
+    galeti[idx].sumaP += r.probabilitate;
+    galeti[idx].sumaCorect += r.corect ? 1 : 0;
+  }
+
   return (
     <section>
       <h2>
@@ -159,6 +167,30 @@ function SectiuneVersiunePiataFotbal({ versiune, piata, randuri }: { versiune: s
         <li>Brier mediu: {brierMediu !== null ? brierMediu.toFixed(4) : "-"}</li>
         <li>Log-loss mediu: {logLossMediu !== null ? logLossMediu.toFixed(4) : "-"}</li>
       </ul>
+      <div className="tabel-scroll">
+        <table className="tabel-calibrare">
+          <thead>
+            <tr>
+              <th>interval</th>
+              <th>n</th>
+              <th>prob. medie</th>
+              <th>frecvență reală</th>
+            </tr>
+          </thead>
+          <tbody>
+            {galeti.map((g, i) => (
+              <tr key={i}>
+                <td>
+                  {i * 10}-{(i + 1) * 10}%
+                </td>
+                <td>{g.n}</td>
+                <td>{g.n > 0 ? `${((g.sumaP / g.n) * 100).toFixed(1)}%` : "-"}</td>
+                <td>{g.n > 0 ? `${((g.sumaCorect / g.n) * 100).toFixed(1)}%` : "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
