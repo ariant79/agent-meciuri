@@ -7,6 +7,7 @@
     "start": "next start",
     "test": "node --test lib/**/*.test.ts",
     "descarca:tenis": "tsx scripts/descarca-date-tenis.ts",
+    "descarca:fotbal": "tsx scripts/descarca-date-fotbal.ts",
     "backtest:tenis": "tsx scripts/backtest-elo-tenis.ts",
     "backfill:tenis": "tsx scripts/backfill-tenis.ts"
   },
