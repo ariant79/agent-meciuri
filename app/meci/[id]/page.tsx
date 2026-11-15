@@ -9,6 +9,9 @@ import { gasesteJucatorId, normalizeazaNumeJucator } from "@/lib/predictii/potri
 import { ordineCanonica, orienteazaH2h, type RandH2hDb } from "@/lib/predictii/h2h";
 import { fetchToateRanduri } from "@/lib/supabase-paginat";
 import type { DimensiuneRating } from "@/lib/predictii/tipuri";
+import fotbalConfig from "@/config/fotbal.json";
+import { gasesteEchipaId } from "@/lib/predictii/potrivire-echipe";
+import { normalizeazaText } from "@/lib/text";
 
 export const dynamic = "force-dynamic";
 
@@ -83,6 +86,59 @@ async function obtineStatisticiTenis(db: ReturnType<typeof supabasePublic>, ev: 
   };
 }
 
+type RandRatingFotbal = {
+  echipa_id: string;
+  nume: string;
+  atac: number;
+  aparare: number;
+  avantaj_gazda: number;
+  nr_meciuri: number;
+};
+
+async function obtineStatisticiFotbal(db: ReturnType<typeof supabasePublic>, ev: RandEveniment) {
+  const ligiAcoperite = fotbalConfig.ligi_acoperite as Record<string, { nume: string }>;
+  if (!(ev.cod_competitie in ligiAcoperite)) return null;
+
+  const [randuriAlias, randuriRating] = await Promise.all([
+    fetchToateRanduri<{ nume_sursa: string; echipa_id: string }>((start, end) =>
+      db.from("echipe_alias").select("nume_sursa,echipa_id").eq("sursa", "espn").range(start, end)
+    ),
+    fetchToateRanduri<RandRatingFotbal>((start, end) =>
+      db
+        .from("ratinguri_fotbal")
+        .select("echipa_id,nume,atac,aparare,avantaj_gazda,nr_meciuri")
+        .eq("liga", ev.cod_competitie)
+        .range(start, end)
+    ),
+  ]);
+
+  const aliasuri = new Map(randuriAlias.map((r) => [r.nume_sursa, r.echipa_id]));
+  const echipeCunoscute = new Map(randuriRating.map((r) => [normalizeazaText(r.nume), r.echipa_id]));
+
+  const r1 = gasesteEchipaId(ev.participant_1, aliasuri, echipeCunoscute);
+  const r2 = gasesteEchipaId(ev.participant_2, aliasuri, echipeCunoscute);
+  if (!r1.echipaId || !r2.echipaId) return null;
+
+  const ratingAcasa = randuriRating.find((r) => r.echipa_id === r1.echipaId);
+  const ratingOaspete = randuriRating.find((r) => r.echipa_id === r2.echipaId);
+  if (!ratingAcasa || !ratingOaspete) return null;
+
+  const { data: randuriPredictie } = await db
+    .from("predictii")
+    .select("piata,selectie,probabilitate")
+    .eq("eveniment_id", ev.id)
+    .in("piata", ["1x2_fotbal", "total_goluri_2.5"]);
+
+  const predictie1x2: Partial<Record<"acasa" | "egal" | "oaspete", number>> = {};
+  const predictieTotalGoluri: Partial<Record<"peste" | "sub", number>> = {};
+  for (const r of randuriPredictie ?? []) {
+    if (r.piata === "1x2_fotbal") predictie1x2[r.selectie as "acasa" | "egal" | "oaspete"] = r.probabilitate;
+    else if (r.piata === "total_goluri_2.5") predictieTotalGoluri[r.selectie as "peste" | "sub"] = r.probabilitate;
+  }
+
+  return { ratingAcasa, ratingOaspete, predictie1x2, predictieTotalGoluri };
+}
+
 export default async function PaginaMeci({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = supabasePublic();
@@ -99,6 +155,7 @@ export default async function PaginaMeci({ params }: { params: Promise<{ id: str
   const eveniment = ev as RandEveniment;
 
   const statisticiTenis = eveniment.sport === "tenis" ? await obtineStatisticiTenis(db, eveniment) : null;
+  const statisticiFotbal = eveniment.sport === "fotbal" ? await obtineStatisticiFotbal(db, eveniment) : null;
   const terminat = eveniment.status === "terminat";
   const rezultat = terminat ? rezultatText(eveniment) : null;
   const faza = afiseazaFaza(eveniment);
@@ -192,6 +249,49 @@ export default async function PaginaMeci({ params }: { params: Promise<{ id: str
             <p className="gol">Cel puțin unul dintre jucători nu e potrivit cu baza de date Sackmann — fără statistici.</p>
           )}
         </section>
+      ) : eveniment.sport === "fotbal" && statisticiFotbal ? (
+        <section>
+          <h2>Statistici fotbal</h2>
+          {Object.keys(statisticiFotbal.predictie1x2).length > 0 && (
+            <p>
+              1X2: {afiseazaParticipant(eveniment, eveniment.participant_1)}{" "}
+              {Math.round((statisticiFotbal.predictie1x2.acasa ?? 0) * 100)}% · egal{" "}
+              {Math.round((statisticiFotbal.predictie1x2.egal ?? 0) * 100)}% ·{" "}
+              {afiseazaParticipant(eveniment, eveniment.participant_2)}{" "}
+              {Math.round((statisticiFotbal.predictie1x2.oaspete ?? 0) * 100)}%
+            </p>
+          )}
+          {Object.keys(statisticiFotbal.predictieTotalGoluri).length > 0 && (
+            <p>
+              Total goluri 2.5: peste {Math.round((statisticiFotbal.predictieTotalGoluri.peste ?? 0) * 100)}% · sub{" "}
+              {Math.round((statisticiFotbal.predictieTotalGoluri.sub ?? 0) * 100)}%
+            </p>
+          )}
+          <div className="rating-grid">
+            {(
+              [
+                { nume: eveniment.participant_1, rating: statisticiFotbal.ratingAcasa },
+                { nume: eveniment.participant_2, rating: statisticiFotbal.ratingOaspete },
+              ] as Array<{ nume: string; rating: RandRatingFotbal }>
+            ).map(({ nume, rating }) => (
+              <div key={nume} className="rating-jucator">
+                <h3>{afiseazaParticipant(eveniment, nume)}</h3>
+                <div className="rating-linie">
+                  <span>Atac</span>
+                  <span>{rating.atac.toFixed(2)}</span>
+                </div>
+                <div className="rating-linie">
+                  <span>Apărare</span>
+                  <span>{rating.aparare.toFixed(2)}</span>
+                </div>
+                <div className="rating-linie">
+                  <span>Meciuri în fereastră</span>
+                  <span>{rating.nr_meciuri}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       ) : (
         <section>
           <h2>Statistici</h2>
@@ -207,6 +307,7 @@ export default async function PaginaMeci({ params }: { params: Promise<{ id: str
 
       <footer className="subsol">
         {eveniment.sport === "tenis" && <p>Date istorice tenis: Jeff Sackmann / Tennis Abstract, CC BY-NC-SA 4.0.</p>}
+        {eveniment.sport === "fotbal" && statisticiFotbal && <p>Date istorice fotbal: football-data.co.uk.</p>}
       </footer>
     </main>
   );
