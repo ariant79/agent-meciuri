@@ -3,6 +3,7 @@ import predictiiConfig from "@/config/predictii.json";
 import { dataRoFromUtc } from "@/lib/date";
 import type { EvenimentScorat } from "@/lib/types";
 import type { Suprafata } from "@/lib/predictii/tipuri";
+import { fetchToateRanduri } from "@/lib/supabase-paginat";
 import {
   actualizeazaMeci,
   predictieCastigator,
@@ -17,32 +18,13 @@ import { aplicaTemperatura } from "@/lib/predictii/temperatura";
 
 const MODEL = "elo-tenis";
 const VERSIUNE_MODEL = predictiiConfig.versiune_model;
-const MARIME_PAGINA = 1000; // PostgREST limitează implicit selecturile la 1000 de rânduri
-
-/** PostgREST plafonează select-urile la 1000 rânduri implicit — paginăm ca să le luăm pe toate */
-async function fetchToateRanduri<T>(
-  construieste: (start: number, end: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
-): Promise<T[]> {
-  const toate: T[] = [];
-  let start = 0;
-  while (true) {
-    const { data, error } = await construieste(start, start + MARIME_PAGINA - 1);
-    if (error) throw new Error(error.message);
-    if (!data || data.length === 0) break;
-    toate.push(...data);
-    if (data.length < MARIME_PAGINA) break;
-    start += MARIME_PAGINA;
-  }
-  return toate;
-}
-
 export interface RezultatActualizarePredictii {
   actualizariElo: number;
   predictiiNoi: number;
   jucatoriNepotriviti: string[];
 }
 
-function determinaSuprafata(competitie: string): Suprafata {
+export function determinaSuprafata(competitie: string): Suprafata {
   const mapare = predictiiConfig.turnee_suprafata_espn as Record<string, string>;
   const gasita = mapare[competitie];
   if (gasita) return gasita as Suprafata;
