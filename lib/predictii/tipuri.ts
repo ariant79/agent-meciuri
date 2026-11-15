@@ -28,3 +28,15 @@ export interface PredictieSelectie {
   selectie: string;
   probabilitate: number;
 }
+
+/** un meci istoric de fotbal normalizat, independent de sursă (football-data.co.uk azi, poate ESPN mai târziu) */
+export interface MeciIstoricFotbal {
+  data: string; // YYYY-MM-DD
+  liga: string; // cod competiție ESPN (ex. "eng.1")
+  echipaAcasaId: string;
+  echipaOaspeteId: string;
+  echipaAcasaNume: string;
+  echipaOaspeteNume: string;
+  golAcasa: number;
+  golOaspete: number;
+}
