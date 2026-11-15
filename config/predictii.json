@@ -1,11 +1,14 @@
 {
   "_nota": "Parametrii modelului Elo tenis (faza 1). Reglabili fără cod.",
+  "_reglaj": "v2: grid search pe validare 2022-2023 (antrenat 2015-2021) + temperature scaling. Vezi scripts/reglaj-elo-tenis.ts. Elo reglat+temp bate regresia logistică pe rank pe Brier și log-loss pe test 2024-2026 (0.2187/0.6262 vs 0.2234/0.6369).",
+  "versiune_model": "2",
   "elo": {
     "rating_initial": 1500,
     "k_baza": 250,
-    "k_offset": 5,
+    "k_offset": 20,
     "k_exponent": 0.4,
-    "pondere_suprafata": 0.5,
+    "pondere_suprafata": 0.35,
+    "temperatura": 1.109491708028867,
     "mapare_suprafata_csv": { "Hard": "hard", "Clay": "clay", "Grass": "grass", "Carpet": "hard" }
   },
   "suprafata_implicita": "hard",

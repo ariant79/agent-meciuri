@@ -74,6 +74,7 @@ export function parseazaMeciuriSackmann(text: string, tur: "atp" | "wta"): MeciI
       castigatorRankCsv: r.winner_rank ? Number(r.winner_rank) : null,
       invinsRankCsv: r.loser_rank ? Number(r.loser_rank) : null,
       walkover: esteWalkover(r.score),
+      esteCalificare: r.round?.startsWith("Q") ?? false,
     });
   }
 

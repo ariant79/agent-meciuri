@@ -3,6 +3,17 @@ import type { DimensiuneRating, Suprafata } from "@/lib/predictii/tipuri";
 
 const DIMENSIUNI: DimensiuneRating[] = ["general", "hard", "clay", "grass"];
 
+export interface ParametriElo {
+  rating_initial: number;
+  k_baza: number;
+  k_offset: number;
+  k_exponent: number;
+  pondere_suprafata: number;
+}
+
+/** parametrii din config/predictii.json — impliciți peste tot în producție */
+export const PARAMETRI_IMPLICIT: ParametriElo = predictiiConfig.elo;
+
 interface IntrareRating {
   rating: number;
   nrMeciuri: number;
@@ -17,18 +28,18 @@ export function creeazaStare(): StareElo {
   return new Map();
 }
 
-function intrareInitiala(): IntrareRating {
-  return { rating: predictiiConfig.elo.rating_initial, nrMeciuri: 0 };
+function intrareInitiala(params: ParametriElo): IntrareRating {
+  return { rating: params.rating_initial, nrMeciuri: 0 };
 }
 
-function obtineJucator(stare: StareElo, jucatorId: string): RatinguriJucator {
+function obtineJucator(stare: StareElo, jucatorId: string, params: ParametriElo): RatinguriJucator {
   let intrari = stare.get(jucatorId);
   if (!intrari) {
     intrari = {
-      general: intrareInitiala(),
-      hard: intrareInitiala(),
-      clay: intrareInitiala(),
-      grass: intrareInitiala(),
+      general: intrareInitiala(params),
+      hard: intrareInitiala(params),
+      clay: intrareInitiala(params),
+      grass: intrareInitiala(params),
     };
     stare.set(jucatorId, intrari);
   }
@@ -36,19 +47,23 @@ function obtineJucator(stare: StareElo, jucatorId: string): RatinguriJucator {
 }
 
 /** K dinamic, stil FiveThirtyEight: scade cu experiența jucătorului pe acea dimensiune */
-function calculeazaK(nrMeciuri: number): number {
-  const { k_baza, k_offset, k_exponent } = predictiiConfig.elo;
-  return k_baza / Math.pow(nrMeciuri + k_offset, k_exponent);
+function calculeazaK(nrMeciuri: number, params: ParametriElo): number {
+  return params.k_baza / Math.pow(nrMeciuri + params.k_offset, params.k_exponent);
 }
 
 function probabilitateElo(ratingA: number, ratingB: number): number {
   return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
 }
 
-/** ratingul folosit la predicție: 0.5 × general + 0.5 × suprafață (ponderea e configurabilă) */
-export function ratingPredictie(stare: StareElo, jucatorId: string, suprafata: Suprafata): number {
-  const intrari = obtineJucator(stare, jucatorId);
-  const pondere = predictiiConfig.elo.pondere_suprafata;
+/** ratingul folosit la predicție: pondere × suprafață + (1-pondere) × general */
+export function ratingPredictie(
+  stare: StareElo,
+  jucatorId: string,
+  suprafata: Suprafata,
+  params: ParametriElo = PARAMETRI_IMPLICIT
+): number {
+  const intrari = obtineJucator(stare, jucatorId, params);
+  const pondere = params.pondere_suprafata;
   return pondere * intrari[suprafata].rating + (1 - pondere) * intrari.general.rating;
 }
 
@@ -57,10 +72,11 @@ export function predictieCastigator(
   stare: StareElo,
   jucatorAId: string,
   jucatorBId: string,
-  suprafata: Suprafata
+  suprafata: Suprafata,
+  params: ParametriElo = PARAMETRI_IMPLICIT
 ): { pA: number; pB: number } {
-  const rA = ratingPredictie(stare, jucatorAId, suprafata);
-  const rB = ratingPredictie(stare, jucatorBId, suprafata);
+  const rA = ratingPredictie(stare, jucatorAId, suprafata, params);
+  const rB = ratingPredictie(stare, jucatorBId, suprafata, params);
   const pA = probabilitateElo(rA, rB);
   return { pA, pB: 1 - pA };
 }
@@ -69,15 +85,21 @@ export function predictieCastigator(
  * actualizează ratingul general și pe suprafață după un meci terminat.
  * walkover-urile nu trebuie trimise aici (vezi MeciIstoric.walkover) — abandonul în timpul meciului se actualizează normal.
  */
-export function actualizeazaMeci(stare: StareElo, castigatorId: string, invinsId: string, suprafata: Suprafata): void {
+export function actualizeazaMeci(
+  stare: StareElo,
+  castigatorId: string,
+  invinsId: string,
+  suprafata: Suprafata,
+  params: ParametriElo = PARAMETRI_IMPLICIT
+): void {
   const dimensiuni: DimensiuneRating[] = ["general", suprafata];
   for (const dim of dimensiuni) {
-    const castigator = obtineJucator(stare, castigatorId)[dim];
-    const invins = obtineJucator(stare, invinsId)[dim];
+    const castigator = obtineJucator(stare, castigatorId, params)[dim];
+    const invins = obtineJucator(stare, invinsId, params)[dim];
 
     const eCastigator = probabilitateElo(castigator.rating, invins.rating);
-    const kCastigator = calculeazaK(castigator.nrMeciuri);
-    const kInvins = calculeazaK(invins.nrMeciuri);
+    const kCastigator = calculeazaK(castigator.nrMeciuri, params);
+    const kInvins = calculeazaK(invins.nrMeciuri, params);
 
     castigator.rating += kCastigator * (1 - eCastigator);
     invins.rating -= kInvins * (1 - eCastigator);
@@ -87,8 +109,8 @@ export function actualizeazaMeci(stare: StareElo, castigatorId: string, invinsId
   }
 }
 
-export function ratinguriJucator(stare: StareElo, jucatorId: string): RatinguriJucator {
-  return obtineJucator(stare, jucatorId);
+export function ratinguriJucator(stare: StareElo, jucatorId: string, params: ParametriElo = PARAMETRI_IMPLICIT): RatinguriJucator {
+  return obtineJucator(stare, jucatorId, params);
 }
 
 export const DIMENSIUNI_RATING = DIMENSIUNI;
@@ -101,10 +123,10 @@ export interface RandRatingDb {
 }
 
 /** reconstituie starea Elo din rândurile salvate în Supabase (tabela ratinguri) */
-export function incarcaStareDinRanduri(randuri: RandRatingDb[]): StareElo {
+export function incarcaStareDinRanduri(randuri: RandRatingDb[], params: ParametriElo = PARAMETRI_IMPLICIT): StareElo {
   const stare: StareElo = new Map();
   for (const r of randuri) {
-    const intrari = obtineJucator(stare, r.jucator_id);
+    const intrari = obtineJucator(stare, r.jucator_id, params);
     intrari[r.suprafata] = { rating: r.rating, nrMeciuri: r.nr_meciuri };
   }
   return stare;

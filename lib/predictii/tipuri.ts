@@ -15,6 +15,8 @@ export interface MeciIstoric {
   invinsRankCsv: number | null;
   /** walkover / retragere înainte de start — nu actualizează ratingul */
   walkover: boolean;
+  /** rundă de calificări (Q1/Q2/Q3), pentru raportul cu/fără calificări */
+  esteCalificare: boolean;
 }
 
 /**

@@ -7,6 +7,7 @@ interface RandEvaluare {
   id: number;
   eveniment_id: string;
   model: string;
+  versiune_model: string;
   piata: string;
   selectie: string;
   probabilitate: number;
@@ -44,24 +45,69 @@ function numeParticipant(r: RandEvaluare, selectie: string): string {
   return selectie === "p1" ? r.participant_1 : r.participant_2;
 }
 
-export default async function Predictii() {
-  const db = supabasePublic();
-  const toate = await fetchToateEvaluarile(db);
-
-  const favorite = toate.filter((r) => r.probabilitate >= 0.5);
+function SectiuneVersiune({ versiune, randuri }: { versiune: string; randuri: RandEvaluare[] }) {
+  const favorite = randuri.filter((r) => r.probabilitate >= 0.5);
   const acuratete = favorite.length > 0 ? favorite.filter((r) => r.corect).length / favorite.length : null;
-  const brierMediu = toate.length > 0 ? toate.reduce((s, r) => s + r.brier, 0) / toate.length : null;
-  const logLossMediu = toate.length > 0 ? toate.reduce((s, r) => s + r.log_loss, 0) / toate.length : null;
+  const brierMediu = randuri.length > 0 ? randuri.reduce((s, r) => s + r.brier, 0) / randuri.length : null;
+  const logLossMediu = randuri.length > 0 ? randuri.reduce((s, r) => s + r.log_loss, 0) / randuri.length : null;
 
   const galeti = Array.from({ length: 10 }, () => ({ n: 0, sumaP: 0, sumaCorect: 0 }));
-  for (const r of toate) {
+  for (const r of randuri) {
     const idx = Math.min(9, Math.floor(r.probabilitate * 10));
     galeti[idx].n++;
     galeti[idx].sumaP += r.probabilitate;
     galeti[idx].sumaCorect += r.corect ? 1 : 0;
   }
 
-  const istoric = favorite.slice(0, 30);
+  return (
+    <section>
+      <h2>elo-tenis · versiune {versiune}</h2>
+      <ul className="lista-surse">
+        <li>Meciuri evaluate: {favorite.length}</li>
+        <li>Acuratețe (câștigă favoritul): {acuratete !== null ? `${(acuratete * 100).toFixed(1)}%` : "-"}</li>
+        <li>Brier mediu: {brierMediu !== null ? brierMediu.toFixed(4) : "-"}</li>
+        <li>Log-loss mediu: {logLossMediu !== null ? logLossMediu.toFixed(4) : "-"}</li>
+      </ul>
+      <div className="tabel-scroll">
+        <table className="tabel-calibrare">
+          <thead>
+            <tr>
+              <th>interval</th>
+              <th>n</th>
+              <th>prob. medie</th>
+              <th>frecvență reală</th>
+            </tr>
+          </thead>
+          <tbody>
+            {galeti.map((g, i) => (
+              <tr key={i}>
+                <td>
+                  {i * 10}-{(i + 1) * 10}%
+                </td>
+                <td>{g.n}</td>
+                <td>{g.n > 0 ? `${((g.sumaP / g.n) * 100).toFixed(1)}%` : "-"}</td>
+                <td>{g.n > 0 ? `${((g.sumaCorect / g.n) * 100).toFixed(1)}%` : "-"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+export default async function Predictii() {
+  const db = supabasePublic();
+  const toate = await fetchToateEvaluarile(db);
+
+  const peVersiune = new Map<string, RandEvaluare[]>();
+  for (const r of toate) {
+    if (!peVersiune.has(r.versiune_model)) peVersiune.set(r.versiune_model, []);
+    peVersiune.get(r.versiune_model)!.push(r);
+  }
+  const versiuni = Array.from(peVersiune.keys()).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+
+  const istoric = toate.filter((r) => r.probabilitate >= 0.5).slice(0, 30);
 
   return (
     <main className="pagina">
@@ -69,48 +115,12 @@ export default async function Predictii() {
         <h1>Predicții</h1>
       </header>
 
-      <section>
-        <h2>Model: elo-tenis · piața: câștigător</h2>
-        {toate.length === 0 ? (
-          <p className="gol">Niciun meci evaluat încă (se evaluează doar meciurile terminate cu predicție salvată).</p>
-        ) : (
-          <ul className="lista-surse">
-            <li>Meciuri evaluate: {favorite.length}</li>
-            <li>Acuratețe (câștigă favoritul): {acuratete !== null ? `${(acuratete * 100).toFixed(1)}%` : "-"}</li>
-            <li>Brier mediu: {brierMediu !== null ? brierMediu.toFixed(4) : "-"}</li>
-            <li>Log-loss mediu: {logLossMediu !== null ? logLossMediu.toFixed(4) : "-"}</li>
-          </ul>
-        )}
-      </section>
-
-      {toate.length > 0 && (
+      {toate.length === 0 ? (
         <section>
-          <h2>Calibrare (bucket-uri de 10%)</h2>
-          <div className="tabel-scroll">
-            <table className="tabel-calibrare">
-              <thead>
-                <tr>
-                  <th>interval</th>
-                  <th>n</th>
-                  <th>prob. medie</th>
-                  <th>frecvență reală</th>
-                </tr>
-              </thead>
-              <tbody>
-                {galeti.map((g, i) => (
-                  <tr key={i}>
-                    <td>
-                      {i * 10}-{(i + 1) * 10}%
-                    </td>
-                    <td>{g.n}</td>
-                    <td>{g.n > 0 ? `${((g.sumaP / g.n) * 100).toFixed(1)}%` : "-"}</td>
-                    <td>{g.n > 0 ? `${((g.sumaCorect / g.n) * 100).toFixed(1)}%` : "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <p className="gol">Niciun meci evaluat încă (se evaluează doar meciurile terminate cu predicție salvată).</p>
         </section>
+      ) : (
+        versiuni.map((v) => <SectiuneVersiune key={v} versiune={v} randuri={peVersiune.get(v)!} />)
       )}
 
       {istoric.length > 0 && (
@@ -127,8 +137,8 @@ export default async function Predictii() {
                   {r.participant_1} – {r.participant_2}
                 </div>
                 <div className="card-detalii">
-                  {r.competitie} · favorit {numeParticipant(r, r.selectie)} ({Math.round(r.probabilitate * 100)}%) · a câștigat{" "}
-                  {numeParticipant(r, r.castigator)}
+                  v{r.versiune_model} · {r.competitie} · favorit {numeParticipant(r, r.selectie)} ({Math.round(r.probabilitate * 100)}%) ·
+                  a câștigat {numeParticipant(r, r.castigator)}
                 </div>
               </li>
             ))}

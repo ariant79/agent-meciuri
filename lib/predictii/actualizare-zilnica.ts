@@ -13,9 +13,10 @@ import {
 } from "@/lib/predictii/modele/elo-tenis";
 import { construiestePiataCastigator } from "@/lib/predictii/piete/castigator";
 import { gasesteJucatorId, normalizeazaNumeJucator } from "@/lib/predictii/potrivire-nume";
+import { aplicaTemperatura } from "@/lib/predictii/temperatura";
 
 const MODEL = "elo-tenis";
-const VERSIUNE_MODEL = "1";
+const VERSIUNE_MODEL = predictiiConfig.versiune_model;
 const MARIME_PAGINA = 1000; // PostgREST limitează implicit selecturile la 1000 de rânduri
 
 /** PostgREST plafonează select-urile la 1000 rânduri implicit — paginăm ca să le luăm pe toate */
@@ -164,23 +165,27 @@ export async function actualizeazaPredictiiTenis(
     if (!id1 || !id2) continue;
 
     const suprafata = determinaSuprafata(ev.competitie);
-    const { pA, pB } = predictieCastigator(stare, id1, id2, suprafata);
-    const selectii = construiestePiataCastigator(pA, pB);
+    const { pA } = predictieCastigator(stare, id1, id2, suprafata);
+    const pACalibrat = aplicaTemperatura(pA, predictiiConfig.elo.temperatura);
+    const selectii = construiestePiataCastigator(pACalibrat, 1 - pACalibrat);
 
-    const { error } = await db.from("predictii").upsert(
-      selectii.map((s) => ({
-        eveniment_id: ev.id,
-        model: MODEL,
-        versiune_model: VERSIUNE_MODEL,
-        piata: s.piata,
-        selectie: s.selectie,
-        probabilitate: s.probabilitate,
-        start_utc: ev.start_utc,
-      })),
-      { onConflict: "eveniment_id,model,piata,selectie", ignoreDuplicates: true }
-    );
+    const { data, error } = await db
+      .from("predictii")
+      .upsert(
+        selectii.map((s) => ({
+          eveniment_id: ev.id,
+          model: MODEL,
+          versiune_model: VERSIUNE_MODEL,
+          piata: s.piata,
+          selectie: s.selectie,
+          probabilitate: s.probabilitate,
+          start_utc: ev.start_utc,
+        })),
+        { onConflict: "eveniment_id,model,piata,selectie", ignoreDuplicates: true }
+      )
+      .select("eveniment_id"); // DO NOTHING pe conflict -> RETURNING reflectă doar rândurile efectiv inserate
     if (error) console.error(`[predictii] eroare la predicție pentru ${ev.id}:`, error.message);
-    else predictiiNoi += selectii.length;
+    else predictiiNoi += data?.length ?? 0;
   }
 
   return { actualizariElo, predictiiNoi, jucatoriNepotriviti: Array.from(jucatoriNepotriviti) };
