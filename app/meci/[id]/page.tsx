@@ -267,6 +267,7 @@ export default async function PaginaMeci({ params }: { params: Promise<{ id: str
               {Math.round((statisticiFotbal.predictieTotalGoluri.sub ?? 0) * 100)}%
             </p>
           )}
+          <p className="card-detalii">Avantaj gazdă (ligă): {statisticiFotbal.ratingAcasa.avantaj_gazda.toFixed(2)}</p>
           <div className="rating-grid">
             {(
               [
