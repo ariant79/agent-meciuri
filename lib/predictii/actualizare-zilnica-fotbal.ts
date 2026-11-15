@@ -14,6 +14,9 @@ import {
 } from "@/lib/predictii/modele/poisson-fotbal";
 import { construiestePiata1x2 } from "@/lib/predictii/piete/1x2-fotbal";
 import { construiestePiataTotalGoluri } from "@/lib/predictii/piete/total-goluri";
+import { construiestePiataAmbeleMarcheaza } from "@/lib/predictii/piete/ambele-marcheaza";
+import { construiestePiataScorExact } from "@/lib/predictii/piete/scor-exact";
+import { construiestePiataHandicap } from "@/lib/predictii/piete/handicap";
 
 const MODEL = "poisson-fotbal";
 const VERSIUNE_MODEL = fotbalConfig.versiune_model;
@@ -206,7 +209,15 @@ export async function actualizeazaPredictiiFotbal(
     if (!lambda) continue;
 
     const distributie = distributieScor(lambda.lambdaAcasa, lambda.lambdaOaspete);
-    const selectii = [...construiestePiata1x2(distributie), ...construiestePiataTotalGoluri(distributie, 2.5)];
+    const selectii = [
+      ...construiestePiata1x2(distributie),
+      ...construiestePiataTotalGoluri(distributie, 1.5),
+      ...construiestePiataTotalGoluri(distributie, 2.5),
+      ...construiestePiataTotalGoluri(distributie, 3.5),
+      ...construiestePiataAmbeleMarcheaza(distributie),
+      ...construiestePiataScorExact(distributie),
+      ...construiestePiataHandicap(distributie, -1.5),
+    ];
 
     const { data, error } = await db
       .from("predictii")
