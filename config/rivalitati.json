@@ -1,0 +1,50 @@
+{
+  "_nota": "Listă de pornire, de completat. Potrivirea pe nume se face normalizat (fără diacritice, lowercase), pe ambele ordini.",
+  "fotbal": [
+    { "eticheta": "El Clásico", "echipe": ["Real Madrid", "Barcelona"], "intensitate": 100 },
+    { "eticheta": "Derbi madrileño", "echipe": ["Real Madrid", "Atletico Madrid"], "intensitate": 85 },
+    { "eticheta": "Der Klassiker", "echipe": ["Bayern Munich", "Borussia Dortmund"], "intensitate": 90 },
+    { "eticheta": "Derby della Madonnina", "echipe": ["AC Milan", "Internazionale"], "intensitate": 95 },
+    { "eticheta": "Derby d'Italia", "echipe": ["Juventus", "Internazionale"], "intensitate": 90 },
+    { "eticheta": "Derby della Capitale", "echipe": ["AS Roma", "Lazio"], "intensitate": 90 },
+    { "eticheta": "North West Derby", "echipe": ["Manchester United", "Liverpool"], "intensitate": 95 },
+    { "eticheta": "Manchester Derby", "echipe": ["Manchester United", "Manchester City"], "intensitate": 90 },
+    { "eticheta": "North London Derby", "echipe": ["Arsenal", "Tottenham Hotspur"], "intensitate": 90 },
+    { "eticheta": "Merseyside Derby", "echipe": ["Liverpool", "Everton"], "intensitate": 80 },
+    { "eticheta": "Le Classique", "echipe": ["Paris Saint-Germain", "Marseille"], "intensitate": 90 },
+    { "eticheta": "De Klassieker", "echipe": ["Ajax", "Feyenoord"], "intensitate": 85 },
+    { "eticheta": "O Clássico", "echipe": ["FC Porto", "Benfica"], "intensitate": 85 },
+    { "eticheta": "Old Firm", "echipe": ["Celtic", "Rangers"], "intensitate": 90 },
+    { "eticheta": "Eternul derby", "echipe": ["FCSB", "Dinamo Bucuresti"], "intensitate": 85 },
+    { "eticheta": "Derby Rapid–FCSB", "echipe": ["Rapid Bucuresti", "FCSB"], "intensitate": 75 }
+  ],
+  "altele": [
+    { "eticheta": "Rivalitate clasică NBA", "echipe": ["Los Angeles Lakers", "Boston Celtics"], "intensitate": 90 },
+    { "eticheta": "Rivalitate clasică NHL", "echipe": ["Montreal Canadiens", "Toronto Maple Leafs"], "intensitate": 85 },
+    { "eticheta": "Rivalitate clasică NFL", "echipe": ["Green Bay Packers", "Chicago Bears"], "intensitate": 85 }
+  ],
+  "tenis": {
+    "_nota": "Perechi de jucători cu multe întâlniri directe; de completat pe parcurs.",
+    "perechi": []
+  },
+  "nationale": [
+    { "eticheta": "Anglia – Germania", "echipe": ["England", "Germany"], "intensitate": 90 },
+    { "eticheta": "Anglia – Spania", "echipe": ["England", "Spain"], "intensitate": 70 },
+    { "eticheta": "Spania – Portugalia", "echipe": ["Spain", "Portugal"], "intensitate": 80 },
+    { "eticheta": "Germania – Olanda", "echipe": ["Germany", "Netherlands"], "intensitate": 85 },
+    { "eticheta": "Franța – Italia", "echipe": ["France", "Italy"], "intensitate": 75 },
+    { "eticheta": "Argentina – Brazilia", "echipe": ["Argentina", "Brazil"], "intensitate": 100 },
+    { "eticheta": "Anglia – Scoția", "echipe": ["England", "Scotland"], "intensitate": 85 },
+    { "eticheta": "România – Ungaria", "echipe": ["Romania", "Hungary"], "intensitate": 70 }
+  ],
+  "cluburi_istorice": [
+    "Real Madrid", "Barcelona", "Bayern Munich", "AC Milan", "Internazionale", "Juventus",
+    "Liverpool", "Manchester United", "Ajax", "Benfica", "FC Porto", "Celtic",
+    "Arsenal", "Chelsea", "Borussia Dortmund", "Paris Saint-Germain", "Marseille",
+    "FCSB", "Dinamo Bucuresti", "Rapid Bucuresti",
+    "Los Angeles Lakers", "Boston Celtics", "Montreal Canadiens", "Ferrari"
+  ],
+  "nationale_istorice": [
+    "Brazil", "Germany", "Italy", "Argentina", "France", "Spain", "England", "Netherlands", "Portugal", "Uruguay"
+  ]
+}

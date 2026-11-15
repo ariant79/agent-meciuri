@@ -1,0 +1,172 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #0f1115;
+  color: #e6e8ec;
+}
+
+.pagina {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.antet {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.antet h1 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.navigare-zile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.navigare-zile a {
+  color: #8ab4ff;
+  text-decoration: none;
+}
+
+.data-curenta {
+  font-weight: 600;
+}
+
+button {
+  background: #2a2f3a;
+  color: #e6e8ec;
+  border: 1px solid #3a4150;
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
+section {
+  margin-bottom: 2rem;
+}
+
+section h2 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9aa3b2;
+  border-bottom: 1px solid #262b35;
+  padding-bottom: 0.4rem;
+}
+
+.lista-evenimente {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.card {
+  background: #171a21;
+  border: 1px solid #262b35;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+}
+
+.card-terminat {
+  opacity: 0.55;
+}
+
+.card-randul1 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.card-ora {
+  font-size: 0.8rem;
+  color: #9aa3b2;
+}
+
+.importanta {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: #8ab4ff;
+}
+
+.card-meci {
+  font-weight: 600;
+  margin: 0.15rem 0;
+}
+
+.card-detalii {
+  font-size: 0.85rem;
+  color: #9aa3b2;
+}
+
+.card-etichete {
+  margin-top: 0.4rem;
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.eticheta {
+  background: #243049;
+  color: #8ab4ff;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+
+.gol {
+  color: #9aa3b2;
+  font-size: 0.9rem;
+}
+
+details summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #9aa3b2;
+}
+
+details[open] summary {
+  color: #e6e8ec;
+}
+
+.lista-surse {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sursa-eroare {
+  color: #ff8a8a;
+}
+
+.sursa-ok {
+  color: #9aa3b2;
+}
+
+.eroare {
+  color: #ff8a8a;
+}
+
+.ultima-actualizare {
+  color: #9aa3b2;
+  font-size: 0.8rem;
+}

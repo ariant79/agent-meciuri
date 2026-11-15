@@ -1,0 +1,38 @@
+{
+  "_nota": "Slug-urile ESPN sunt de verificat cu un request de probă. nivel: 0-100, traditie: 0-100.",
+  "fotbal": [
+    { "cod": "uefa.champions", "nume": "UEFA Champions League", "nivel": 100, "traditie": 100 },
+    { "cod": "uefa.europa", "nume": "UEFA Europa League", "nivel": 75, "traditie": 70 },
+    { "cod": "uefa.europa.conf", "nume": "UEFA Conference League", "nivel": 55, "traditie": 40 },
+    { "cod": "eng.1", "nume": "Premier League", "nivel": 85, "traditie": 90 },
+    { "cod": "esp.1", "nume": "La Liga", "nivel": 85, "traditie": 90 },
+    { "cod": "ita.1", "nume": "Serie A", "nivel": 80, "traditie": 90 },
+    { "cod": "ger.1", "nume": "Bundesliga", "nivel": 80, "traditie": 85 },
+    { "cod": "fra.1", "nume": "Ligue 1", "nivel": 70, "traditie": 70 },
+    { "cod": "por.1", "nume": "Liga Portugal", "nivel": 55, "traditie": 70 },
+    { "cod": "ned.1", "nume": "Eredivisie", "nivel": 55, "traditie": 70 },
+    { "cod": "rou.1", "nume": "SuperLiga România", "nivel": 40, "traditie": 50, "activ": false, "_nota_activ": "ESPN nu mai are meciuri după 2025-09-29, verificat exhaustiv pe sezonul 2026-27" },
+    { "cod": "fifa.world", "nume": "Campionatul Mondial", "nivel": 100, "traditie": 100 },
+    { "cod": "uefa.euro", "nume": "Campionatul European", "nivel": 95, "traditie": 95 },
+    { "cod": "uefa.nations", "nume": "UEFA Nations League", "nivel": 60, "traditie": 40 },
+    { "cod": "fifa.friendly", "nume": "Amical internațional", "nivel": 20, "traditie": 30 }
+  ],
+  "tenis": {
+    "surse": ["atp", "wta"],
+    "categorii": [
+      { "potrivire": ["Australian Open", "Roland Garros", "French Open", "Wimbledon", "US Open"], "categorie": "Grand Slam", "nivel": 100, "traditie": 100 },
+      { "potrivire": ["ATP Finals", "WTA Finals"], "categorie": "Turneul Campionilor", "nivel": 95, "traditie": 80 },
+      { "potrivire": ["Indian Wells", "Miami", "Monte Carlo", "Madrid", "Rome", "Internazionali", "Canada", "Toronto", "Montreal", "Cincinnati", "Shanghai", "Paris"], "categorie": "Masters 1000 / WTA 1000", "nivel": 80, "traditie": 70 },
+      { "potrivire": ["Davis Cup", "Billie Jean King Cup", "Olympic"], "categorie": "Echipe / Olimpiadă", "nivel": 80, "traditie": 85 }
+    ],
+    "implicit": { "categorie": "ATP/WTA 250-500", "nivel": 45, "traditie": 40 }
+  },
+  "altele": [
+    { "sport": "basketball", "liga": "nba", "nume": "NBA", "nivel": 75, "traditie": 80 },
+    { "sport": "hockey", "liga": "nhl", "nume": "NHL", "nivel": 70, "traditie": 75 },
+    { "sport": "football", "liga": "nfl", "nume": "NFL", "nivel": 75, "traditie": 80 },
+    { "sport": "baseball", "liga": "mlb", "nume": "MLB", "nivel": 65, "traditie": 75 },
+    { "sport": "mma", "liga": "ufc", "nume": "UFC", "nivel": 65, "traditie": 50 },
+    { "sport": "racing", "liga": "f1", "nume": "Formula 1", "nivel": 85, "traditie": 90 }
+  ]
+}
