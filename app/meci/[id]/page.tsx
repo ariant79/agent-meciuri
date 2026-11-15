@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { supabasePublic } from "@/lib/supabase";
 import { oraRoFromUtc } from "@/lib/date";
-import { numeSport, afiseazaFaza, afiseazaParticipant, rezultatText, type RandEvenimentDeBaza } from "@/lib/afisare-eveniment";
+import { afiseazaFaza, afiseazaParticipant, rezultatText, type RandEvenimentDeBaza } from "@/lib/afisare-eveniment";
+import type { ScorDetalii } from "@/lib/types";
 import { determinaSuprafata } from "@/lib/predictii/actualizare-zilnica";
 import { gasesteJucatorId, normalizeazaNumeJucator } from "@/lib/predictii/potrivire-nume";
 import { ordineCanonica, orienteazaH2h, type RandH2hDb } from "@/lib/predictii/h2h";
@@ -15,7 +16,7 @@ interface RandEveniment extends RandEvenimentDeBaza {
   id: string;
   start_utc: string;
   scor: number | null;
-  scor_detalii: { valoare: number; rivalitate: number; traditie: number } | null;
+  scor_detalii: ScorDetalii | null;
   etichete: string[] | null;
   data_ro: string;
 }
