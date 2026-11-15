@@ -44,8 +44,10 @@ export function orienteazaH2h(
 
 // --- replay în masă (doar pentru backfill — vezi scripts/backfill-tenis.ts) ---
 
+/** starea h2h: map cu perechi de jucători și rezultatul meciurilor */
 export type StareH2h = Map<string, RandH2hDb>;
 
+/** inițializează o stare h2h goală */
 export function creeazaStareH2h(): StareH2h {
   return new Map();
 }
@@ -54,12 +56,14 @@ function cheiePereche(id1: string, id2: string): string {
   return `${id1}|${id2}`;
 }
 
+/** actualizează starea h2h după o victorie, în replay masiv */
 export function actualizeazaH2hBulk(stare: StareH2h, castigatorId: string, invinsId: string, dataMeciISO: string): void {
   const [id1, id2] = ordineCanonica(castigatorId, invinsId);
   const existent = stare.get(cheiePereche(id1, id2)) ?? null;
   stare.set(cheiePereche(id1, id2), incrementeazaH2h(existent, castigatorId, invinsId, dataMeciISO));
 }
 
+/** extrage toți rândurile h2h din stare */
 export function randuriH2h(stare: StareH2h): RandH2hDb[] {
   return Array.from(stare.values());
 }
