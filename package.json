@@ -9,7 +9,8 @@
     "descarca:tenis": "tsx scripts/descarca-date-tenis.ts",
     "descarca:fotbal": "tsx scripts/descarca-date-fotbal.ts",
     "backtest:tenis": "tsx scripts/backtest-elo-tenis.ts",
-    "backfill:tenis": "tsx scripts/backfill-tenis.ts"
+    "backfill:tenis": "tsx scripts/backfill-tenis.ts",
+    "backfill:fotbal": "tsx scripts/backfill-fotbal.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
