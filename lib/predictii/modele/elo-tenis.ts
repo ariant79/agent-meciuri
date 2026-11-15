@@ -8,7 +8,7 @@ interface IntrareRating {
   nrMeciuri: number;
 }
 
-type RatinguriJucator = Record<DimensiuneRating, IntrareRating>;
+export type RatinguriJucator = Record<DimensiuneRating, IntrareRating>;
 
 /** starea Elo: rating general + pe suprafață pentru fiecare jucător, ținută în memorie */
 export type StareElo = Map<string, RatinguriJucator>;
@@ -92,3 +92,20 @@ export function ratinguriJucator(stare: StareElo, jucatorId: string): RatinguriJ
 }
 
 export const DIMENSIUNI_RATING = DIMENSIUNI;
+
+export interface RandRatingDb {
+  jucator_id: string;
+  suprafata: DimensiuneRating;
+  rating: number;
+  nr_meciuri: number;
+}
+
+/** reconstituie starea Elo din rândurile salvate în Supabase (tabela ratinguri) */
+export function incarcaStareDinRanduri(randuri: RandRatingDb[]): StareElo {
+  const stare: StareElo = new Map();
+  for (const r of randuri) {
+    const intrari = obtineJucator(stare, r.jucator_id);
+    intrari[r.suprafata] = { rating: r.rating, nrMeciuri: r.nr_meciuri };
+  }
+  return stare;
+}

@@ -1,5 +1,10 @@
+import { readFile } from "fs/promises";
+import path from "path";
 import predictiiConfig from "@/config/predictii.json";
 import type { MeciIstoric, Suprafata } from "@/lib/predictii/tipuri";
+
+export const DIR_CACHE_SACKMANN = path.join(process.cwd(), "data", "sackmann");
+export const ANI_SACKMANN = Array.from({ length: 2026 - 2015 + 1 }, (_, i) => 2015 + i);
 
 const ORDINE_RUNDA: Record<string, number> = {
   Q1: 0,
@@ -73,4 +78,31 @@ export function parseazaMeciuriSackmann(text: string, tur: "atp" | "wta"): MeciI
   }
 
   return rezultate;
+}
+
+async function citesteOpt(caleRelativa: string): Promise<string | null> {
+  try {
+    return await readFile(path.join(DIR_CACHE_SACKMANN, caleRelativa), "utf8");
+  } catch {
+    return null;
+  }
+}
+
+/** încarcă toate meciurile din cache-ul local (data/sackmann/), sortate cronologic; vezi scripts/descarca-date-tenis.ts */
+export async function incarcaIstoricSackmann(): Promise<MeciIstoric[]> {
+  const toate: MeciIstoric[] = [];
+  for (const an of ANI_SACKMANN) {
+    for (const [tur, fisiere] of [
+      ["atp", [`atp/atp_matches_${an}.csv`, `atp/atp_matches_qual_chall_${an}.csv`]],
+      ["wta", [`wta/wta_matches_${an}.csv`, `wta/wta_matches_qual_itf_${an}.csv`]],
+    ] as const) {
+      for (const fisier of fisiere) {
+        const text = await citesteOpt(fisier);
+        if (!text) continue;
+        toate.push(...parseazaMeciuriSackmann(text, tur));
+      }
+    }
+  }
+  toate.sort((a, b) => a.ordineSort - b.ordineSort);
+  return toate;
 }

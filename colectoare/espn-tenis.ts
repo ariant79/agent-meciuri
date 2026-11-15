@@ -10,6 +10,7 @@ const STATUS_MAP: Record<string, Eveniment["status"]> = {
 
 interface EspnAthleteCompetitor {
   homeAway: "home" | "away";
+  winner?: boolean;
   curatedRank?: { current: number };
   athlete: { id: string; displayName: string };
   linescores?: Array<{ value: number; tiebreak?: number }>;
@@ -89,6 +90,10 @@ function mapMatch(
   const extra: Record<string, unknown> = {};
   if (rankAcasa !== null || rankOaspete !== null) extra.ranking = { acasa: rankAcasa, oaspete: rankOaspete };
   if (scorSeturi) extra.scor = scorSeturi;
+  if (status === "terminat") {
+    if (acasa.winner) extra.castigator = "p1";
+    else if (oaspete.winner) extra.castigator = "p2";
+  }
 
   return {
     id: `espn:${match.id}`,

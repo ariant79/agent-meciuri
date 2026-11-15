@@ -4,6 +4,7 @@ import { colecteazaFotbalEspn } from "@/colectoare/espn-fotbal";
 import { colecteazaTenisEspn } from "@/colectoare/espn-tenis";
 import { colecteazaAlteleEspn } from "@/colectoare/espn-altele";
 import { clasifica } from "@/clasificator";
+import { actualizeazaPredictiiTenis } from "@/lib/predictii/actualizare-zilnica";
 import type { StareSursa } from "@/lib/types";
 
 export async function executaColectare(dataRo: string) {
@@ -43,6 +44,16 @@ export async function executaColectare(dataRo: string) {
     if (error) eroareSalvare = error.message;
   }
 
+  let predictii: { actualizariElo: number; predictiiNoi: number; jucatoriNepotriviti: string[] } | undefined;
+  if (!eroareSalvare) {
+    const tenisScorat = scorate.filter((e) => e.sport === "tenis");
+    try {
+      predictii = await actualizeazaPredictiiTenis(db, tenisScorat);
+    } catch (err) {
+      console.error("[predictii] eroare neprevăzută:", err);
+    }
+  }
+
   await db.from("rulari").insert({
     terminata_la: new Date().toISOString(),
     data_ro: dataRo,
@@ -50,5 +61,5 @@ export async function executaColectare(dataRo: string) {
     eroare: eroareSalvare ?? null,
   });
 
-  return { dataRo, evenimente: scorate.length, stareSurse, eroareSalvare };
+  return { dataRo, evenimente: scorate.length, stareSurse, eroareSalvare, predictii };
 }

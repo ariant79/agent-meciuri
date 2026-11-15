@@ -5,41 +5,11 @@
  * Rulare: npx tsx scripts/backtest-elo-tenis.ts
  * (necesită data/sackmann/ populat — npx tsx scripts/descarca-date-tenis.ts)
  */
-import { readFile } from "fs/promises";
-import path from "path";
-import { parseazaMeciuriSackmann } from "@/lib/predictii/sackmann";
+import { incarcaIstoricSackmann } from "@/lib/predictii/sackmann";
 import { creeazaStare, predictieCastigator, actualizeazaMeci } from "@/lib/predictii/modele/elo-tenis";
-import type { MeciIstoric, Suprafata } from "@/lib/predictii/tipuri";
+import type { Suprafata } from "@/lib/predictii/tipuri";
 
-const DIR_CACHE = path.join(process.cwd(), "data", "sackmann");
-const ANI = Array.from({ length: 2026 - 2015 + 1 }, (_, i) => 2015 + i);
 const AN_LIMITA_TEST = 2024; // 2015-2023 = antrenare, 2024-2026 = evaluare
-
-async function citesteOpt(caleRelativa: string): Promise<string | null> {
-  try {
-    return await readFile(path.join(DIR_CACHE, caleRelativa), "utf8");
-  } catch {
-    return null;
-  }
-}
-
-async function incarcaToateMeciurile(): Promise<MeciIstoric[]> {
-  const toate: MeciIstoric[] = [];
-  for (const an of ANI) {
-    for (const [tur, fisiere] of [
-      ["atp", [`atp/atp_matches_${an}.csv`, `atp/atp_matches_qual_chall_${an}.csv`]],
-      ["wta", [`wta/wta_matches_${an}.csv`, `wta/wta_matches_qual_itf_${an}.csv`]],
-    ] as const) {
-      for (const fisier of fisiere) {
-        const text = await citesteOpt(fisier);
-        if (!text) continue;
-        toate.push(...parseazaMeciuriSackmann(text, tur));
-      }
-    }
-  }
-  toate.sort((a, b) => a.ordineSort - b.ordineSort);
-  return toate;
-}
 
 function anDinDataISO(dataISO: string): number {
   return Number(dataISO.slice(0, 4));
@@ -59,7 +29,7 @@ function clipProb(p: number): number {
 
 async function main() {
   console.log("Încarc meciurile Sackmann (2015-2026)...");
-  const meciuri = await incarcaToateMeciurile();
+  const meciuri = await incarcaIstoricSackmann();
   console.log(`Total meciuri (ATP+WTA, tur+Slam+Finals, inclusiv calificări): ${meciuri.length}`);
 
   const stare = creeazaStare();

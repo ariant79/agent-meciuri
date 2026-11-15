@@ -5,7 +5,10 @@
     "dev": "next dev -p 3002",
     "build": "next build",
     "start": "next start",
-    "test": "node --test lib/**/*.test.ts"
+    "test": "node --test lib/**/*.test.ts",
+    "descarca:tenis": "tsx scripts/descarca-date-tenis.ts",
+    "backtest:tenis": "tsx scripts/backtest-elo-tenis.ts",
+    "backfill:tenis": "tsx scripts/backfill-tenis.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
@@ -16,6 +19,7 @@
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.5",
+    "tsx": "^4.19.0",
     "typescript": "^5.5.4"
   }
 }

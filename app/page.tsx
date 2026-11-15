@@ -55,6 +55,27 @@ function puncteImportanta(scor: number | null): number {
   return 1;
 }
 
+type Predictie = { p1: number; p2: number };
+
+function PredictieTenis({ ev, predictie }: { ev: RandEveniment; predictie: Predictie }) {
+  const favorizeazaP1 = predictie.p1 >= predictie.p2;
+  const castigator = ev.extra?.castigator;
+  const corect = ev.status === "terminat" && typeof castigator === "string" ? castigator === (favorizeazaP1 ? "p1" : "p2") : null;
+
+  return (
+    <div className="card-predictie">
+      <span className={favorizeazaP1 ? "predictie-favorit" : undefined}>
+        {afiseazaParticipant(ev, ev.participant_1)} {Math.round(predictie.p1 * 100)}%
+      </span>
+      {" · "}
+      <span className={!favorizeazaP1 ? "predictie-favorit" : undefined}>
+        {afiseazaParticipant(ev, ev.participant_2)} {Math.round(predictie.p2 * 100)}%
+      </span>
+      {corect !== null && <span className={corect ? "predictie-corecta" : "predictie-gresita"}>{corect ? " ✓" : " ✗"}</span>}
+    </div>
+  );
+}
+
 function rezultatText(ev: RandEveniment): string | null {
   const scor = ev.extra?.scor;
   if (Array.isArray(scor)) return `${scor[0]} – ${scor[1]}`;
@@ -74,7 +95,7 @@ function IndicatorImportanta({ scor }: { scor: number | null }) {
   );
 }
 
-function CardEveniment({ ev }: { ev: RandEveniment }) {
+function CardEveniment({ ev, predictie }: { ev: RandEveniment; predictie?: Predictie }) {
   const terminat = ev.status === "terminat";
   const rezultat = terminat ? rezultatText(ev) : null;
   const faza = afiseazaFaza(ev);
@@ -93,6 +114,7 @@ function CardEveniment({ ev }: { ev: RandEveniment }) {
         {faza ? ` · ${faza}` : ""}
         {rezultat ? ` · ${rezultat}` : ""}
       </div>
+      {predictie && <PredictieTenis ev={ev} predictie={predictie} />}
       {ev.etichete && ev.etichete.length > 0 && (
         <div className="card-etichete">
           {ev.etichete.map((et) => (
@@ -114,14 +136,22 @@ function ordoneazaPentruAfisare(lista: RandEveniment[]): RandEveniment[] {
   return [...viitoare, ...terminate];
 }
 
-function SectiuneSport({ titlu, evenimente }: { titlu: string; evenimente: RandEveniment[] }) {
+function SectiuneSport({
+  titlu,
+  evenimente,
+  predictii,
+}: {
+  titlu: string;
+  evenimente: RandEveniment[];
+  predictii?: Map<string, Predictie>;
+}) {
   return (
     <section>
       <h2>{titlu}</h2>
       {evenimente.length ? (
         <ul className="lista-evenimente">
           {ordoneazaPentruAfisare(evenimente).map((ev) => (
-            <CardEveniment key={ev.id} ev={ev} />
+            <CardEveniment key={ev.id} ev={ev} predictie={predictii?.get(ev.id)} />
           ))}
         </ul>
       ) : (
@@ -153,6 +183,22 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
   const tenis = toate.filter((e) => e.sport === "tenis");
   const altele = toate.filter((e) => e.sport !== "fotbal" && e.sport !== "tenis");
 
+  const predictiiTenis = new Map<string, Predictie>();
+  if (tenis.length > 0) {
+    const { data: randuriPredictii } = await db
+      .from("predictii")
+      .select("eveniment_id,selectie,probabilitate")
+      .eq("model", "elo-tenis")
+      .eq("piata", "castigator")
+      .in("eveniment_id", tenis.map((e) => e.id));
+
+    for (const r of randuriPredictii ?? []) {
+      const existent = predictiiTenis.get(r.eveniment_id) ?? { p1: 0, p2: 0 };
+      existent[r.selectie as "p1" | "p2"] = r.probabilitate;
+      predictiiTenis.set(r.eveniment_id, existent);
+    }
+  }
+
   const ultimaRulare = rulari?.[0] as
     | { terminata_la: string | null; stare_surse: Record<string, StareSursa>; eroare: string | null }
     | undefined;
@@ -175,7 +221,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
       </header>
 
       <SectiuneSport titlu="Fotbal" evenimente={fotbal} />
-      <SectiuneSport titlu="Tenis" evenimente={tenis} />
+      <SectiuneSport titlu="Tenis" evenimente={tenis} predictii={predictiiTenis} />
       <SectiuneSport titlu="Alte sporturi" evenimente={altele} />
 
       <section>
@@ -199,6 +245,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
           <p className="gol">Nicio rulare înregistrată pentru această zi.</p>
         )}
       </section>
+
+      <footer className="subsol">
+        <Link href="/predictii">Predicții — istoric și acuratețe</Link>
+        <p>Date istorice tenis: Jeff Sackmann / Tennis Abstract, CC BY-NC-SA 4.0.</p>
+      </footer>
     </main>
   );
 }
