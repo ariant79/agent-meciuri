@@ -102,6 +102,9 @@ export function estimeazaRatinguri(meciuri: RezultatMeciPoisson[]): StarePoisson
     }
 
     if (schimbareMaxima < PRAG_CONVERGENTA) break;
+    if (iter === ITERATII_MAX - 1) {
+      console.warn(`[poisson-fotbal] nu a convers în ${ITERATII_MAX} iterații (schimbare maximă rămasă: ${schimbareMaxima})`);
+    }
   }
 
   const ratinguri = new Map<string, RatingEchipa>();
