@@ -1,0 +1,23 @@
+{
+  "_nota": "Parametrii modelului Elo tenis (faza 1). Reglabili fără cod.",
+  "elo": {
+    "rating_initial": 1500,
+    "k_baza": 250,
+    "k_offset": 5,
+    "k_exponent": 0.4,
+    "pondere_suprafata": 0.5,
+    "mapare_suprafata_csv": { "Hard": "hard", "Clay": "clay", "Grass": "grass", "Carpet": "hard" }
+  },
+  "suprafata_implicita": "hard",
+  "niveluri_incluse": {
+    "atp": ["A", "M", "G", "F"],
+    "wta": ["I", "P", "G", "PM", "F"]
+  },
+  "turnee_suprafata_espn": {
+    "_nota": "mapare turneu ESPN -> suprafață, pentru meciurile curente fără dată Sackmann; turneele nemapate folosesc suprafata_implicita și se loghează",
+    "Nitto ATP Finals": "hard",
+    "ATP Finals": "hard",
+    "WTA Finals": "hard",
+    "FAGE WTA Finals Indian Wells": "hard"
+  }
+}
