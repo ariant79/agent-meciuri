@@ -1,8 +1,8 @@
 {
-  "_nota": "Configurație predicții fotbal (sub-proiectul B). Fereastra glisantă implicit 3 sezoane; validată prin scripts/backtest-poisson-fotbal.ts.",
+  "_nota": "Configurație predicții fotbal (sub-proiectul B). Backtest walk-forward 2026-11 (scripts/backtest-poisson-fotbal.ts, ultimele 2 sezoane de test, loturi de 30 meciuri): fereastra de 4 sezoane are cel mai mic log-loss mediu (1X2 + total 2.5, mediat pe cele 5 ligi) — 1.7015 vs 1.7084 pentru 3 sezoane și 1.7129 pentru 2 sezoane. Diferențe mici (~0.4%) și neuniforme per ligă (eng.1 preferă 2 sezoane), dar 4 sezoane câștigă pe agregat; ratinguri_fotbal reestimat cu backfill pe noua fereastră.",
   "model": "poisson-fotbal",
   "versiune_model": "1",
-  "fereastra_sezoane": 3,
+  "fereastra_sezoane": 4,
   "ligi_acoperite": {
     "eng.1": { "divizie_football_data": "E0", "nume": "Premier League" },
     "esp.1": { "divizie_football_data": "SP1", "nume": "La Liga" },
