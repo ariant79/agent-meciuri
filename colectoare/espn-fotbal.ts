@@ -1,5 +1,6 @@
 import type { Eveniment, StareSursa } from "@/lib/types";
 import { dataRoFromUtc, deplaseazaYYYYMMDD, yyyymmddDinDataRo } from "@/lib/date";
+import { fetchEspn } from "@/lib/fetch-espn";
 import competitii from "@/config/competitii.json";
 
 const STATUS_MAP: Record<string, Eveniment["status"]> = {
@@ -87,8 +88,7 @@ function adunaIntrariClasament(nod: any): EntryClasament[] {
 
 async function obtineClasament(cod: string): Promise<Map<string, number> | null> {
   try {
-    const res = await fetch(`https://site.api.espn.com/apis/v2/sports/soccer/${cod}/standings`);
-    if (!res.ok) return null;
+    const res = await fetchEspn(`https://site.api.espn.com/apis/v2/sports/soccer/${cod}/standings`);
     const data = await res.json();
     const intrari = adunaIntrariClasament(data);
     const harta = new Map<string, number>();
@@ -144,8 +144,7 @@ function mapEvent(
 
 async function obtineScoreboard(cod: string, dataYYYYMMDD: string): Promise<{ events: EspnEvent[]; raw: any }> {
   const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${cod}/scoreboard?dates=${dataYYYYMMDD}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const res = await fetchEspn(url);
   const data = await res.json();
   return { events: Array.isArray(data.events) ? data.events : [], raw: data };
 }

@@ -1,5 +1,6 @@
 import type { Eveniment, StareSursa } from "@/lib/types";
 import { dataRoFromUtc, deplaseazaYYYYMMDD, yyyymmddDinDataRo } from "@/lib/date";
+import { fetchEspn } from "@/lib/fetch-espn";
 
 const STATUS_MAP: Record<string, Eveniment["status"]> = {
   pre: "programat",
@@ -54,8 +55,7 @@ function mapStatus(state: string, name: string): Eveniment["status"] {
 async function obtineClasament(sursa: "atp" | "wta"): Promise<Map<string, number>> {
   const harta = new Map<string, number>();
   try {
-    const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/tennis/${sursa}/rankings`);
-    if (!res.ok) return harta;
+    const res = await fetchEspn(`https://site.api.espn.com/apis/site/v2/sports/tennis/${sursa}/rankings`);
     const data = await res.json();
     const ranks = data.rankings?.[0]?.ranks ?? [];
     for (const r of ranks) harta.set(r.athlete.id, r.current);
@@ -66,8 +66,7 @@ async function obtineClasament(sursa: "atp" | "wta"): Promise<Map<string, number
 }
 
 async function obtineTurnee(sursa: "atp" | "wta", dataYYYYMMDD: string): Promise<EspnTournament[]> {
-  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/tennis/${sursa}/scoreboard?dates=${dataYYYYMMDD}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const res = await fetchEspn(`https://site.api.espn.com/apis/site/v2/sports/tennis/${sursa}/scoreboard?dates=${dataYYYYMMDD}`);
   const data = await res.json();
   return Array.isArray(data.events) ? data.events : [];
 }

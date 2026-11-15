@@ -1,5 +1,6 @@
 import type { Eveniment, StareSursa } from "@/lib/types";
 import { dataRoFromUtc, deplaseazaYYYYMMDD, yyyymmddDinDataRo } from "@/lib/date";
+import { fetchEspn } from "@/lib/fetch-espn";
 import competitii from "@/config/competitii.json";
 
 const STATUS_MAP: Record<string, Eveniment["status"]> = {
@@ -90,8 +91,7 @@ function mapCardUfc(ev: EspnEvent, liga: string, nume: string): Eveniment | null
 }
 
 async function obtineScoreboard(sport: string, liga: string, dataYYYYMMDD: string): Promise<EspnEvent[]> {
-  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${sport}/${liga}/scoreboard?dates=${dataYYYYMMDD}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const res = await fetchEspn(`https://site.api.espn.com/apis/site/v2/sports/${sport}/${liga}/scoreboard?dates=${dataYYYYMMDD}`);
   const data = await res.json();
   return Array.isArray(data.events) ? data.events : [];
 }
