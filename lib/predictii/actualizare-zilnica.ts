@@ -4,6 +4,7 @@ import { dataRoFromUtc } from "@/lib/date";
 import type { EvenimentScorat } from "@/lib/types";
 import type { Suprafata } from "@/lib/predictii/tipuri";
 import { fetchToateRanduri } from "@/lib/supabase-paginat";
+import { ordineCanonica, incrementeazaH2h, type RandH2hDb } from "@/lib/predictii/h2h";
 import {
   actualizeazaMeci,
   predictieCastigator,
@@ -95,6 +96,21 @@ export async function actualizeazaPredictiiTenis(
     const invinsId = castigatorSelectie === "p1" ? id2 : id1;
 
     actualizeazaMeci(stare, castigatorId, invinsId, suprafata);
+    const [h2hId1, h2hId2] = ordineCanonica(castigatorId, invinsId);
+    const { data: randH2hExistent } = await db
+      .from("h2h_tenis")
+      .select("jucator_id_1,jucator_id_2,victorii_1,victorii_2,ultimul_meci")
+      .eq("jucator_id_1", h2hId1)
+      .eq("jucator_id_2", h2hId2)
+      .maybeSingle();
+    const randH2hNou = incrementeazaH2h(
+      (randH2hExistent as RandH2hDb | null) ?? null,
+      castigatorId,
+      invinsId,
+      dataRoFromUtc(ev.start_utc)
+    );
+    const { error: eroareH2h } = await db.from("h2h_tenis").upsert(randH2hNou, { onConflict: "jucator_id_1,jucator_id_2" });
+    if (eroareH2h) console.error(`[predictii] eroare la h2h pentru ${castigatorId}/${invinsId}:`, eroareH2h.message);
     jucatoriAfectati.add(castigatorId);
     jucatoriAfectati.add(invinsId);
     const dataMeci = dataRoFromUtc(ev.start_utc);
