@@ -86,7 +86,7 @@ async function main() {
             suma1x2Brier += brier(s.probabilitate, s.selectie === rez1x2);
             if (s.selectie === rez1x2) suma1x2LogLoss += logLoss(s.probabilitate, true);
           }
-          for (const s of construiestePiataTotalGoluri(distributie)) {
+          for (const s of construiestePiataTotalGoluri(distributie, 2.5)) {
             sumaTotalBrier += brier(s.probabilitate, s.selectie === rezTotal);
             if (s.selectie === rezTotal) sumaTotalLogLoss += logLoss(s.probabilitate, true);
           }

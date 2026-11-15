@@ -206,7 +206,7 @@ export async function actualizeazaPredictiiFotbal(
     if (!lambda) continue;
 
     const distributie = distributieScor(lambda.lambdaAcasa, lambda.lambdaOaspete);
-    const selectii = [...construiestePiata1x2(distributie), ...construiestePiataTotalGoluri(distributie)];
+    const selectii = [...construiestePiata1x2(distributie), ...construiestePiataTotalGoluri(distributie, 2.5)];
 
     const { data, error } = await db
       .from("predictii")
