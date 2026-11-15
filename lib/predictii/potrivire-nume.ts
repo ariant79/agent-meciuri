@@ -1,21 +1,7 @@
-const DIACRITIC_MIN = 0x0300;
-const DIACRITIC_MAX = 0x036f;
+import { normalizeazaText } from "@/lib/text";
 
 /** fără diacritice, lowercase, fără cratime/puncte (cf. PREDICTII.md) */
-export function normalizeazaNumeJucator(nume: string): string {
-  return nume
-    .normalize("NFD")
-    .split("")
-    .filter((ch) => {
-      const cod = ch.codePointAt(0) ?? 0;
-      return cod < DIACRITIC_MIN || cod > DIACRITIC_MAX;
-    })
-    .join("")
-    .toLowerCase()
-    .replace(/[-.]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+export const normalizeazaNumeJucator = normalizeazaText;
 
 export interface RezultatPotrivireNume {
   jucatorId: string | null;
