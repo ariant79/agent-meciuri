@@ -1,0 +1,13 @@
+{
+  "_nota": "Configurație predicții fotbal (sub-proiectul B). Fereastra glisantă implicit 3 sezoane; validată prin scripts/backtest-poisson-fotbal.ts.",
+  "model": "poisson-fotbal",
+  "versiune_model": "1",
+  "fereastra_sezoane": 3,
+  "ligi_acoperite": {
+    "eng.1": { "divizie_football_data": "E0", "nume": "Premier League" },
+    "esp.1": { "divizie_football_data": "SP1", "nume": "La Liga" },
+    "ita.1": { "divizie_football_data": "I1", "nume": "Serie A" },
+    "ger.1": { "divizie_football_data": "D1", "nume": "Bundesliga" },
+    "fra.1": { "divizie_football_data": "F1", "nume": "Ligue 1" }
+  }
+}
