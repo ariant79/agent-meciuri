@@ -8,5 +8,5 @@
   "uefa_nations_liga_bonus": { "a": 15, "b": 10, "c": 5, "d": 0 },
   "tenis": { "top_ranking": 10, "bonus_ambii_top": 25, "bonus_unul_top": 10 },
   "selectie": { "fotbal": 6, "tenis": 4, "altele": 5, "altele_max_per_sport": 2 },
-  "prag_minim": { "fotbal": 45, "tenis": 35, "altele": 40 }
+  "prag_minim": { "fotbal": 45, "tenis": 35, "altele": 35 }
 }
